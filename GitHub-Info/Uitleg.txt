@@ -4,3 +4,5 @@ Stap 3: git clone (HTTPS Link).
 Stap 4: cd (map naam)
 Stap 5: Open VSCode en selecteer de folder c:\dev\(naam folder)
 Stap 6:
+
+NB: Folder naam = PJSDV-2023-Groep2
