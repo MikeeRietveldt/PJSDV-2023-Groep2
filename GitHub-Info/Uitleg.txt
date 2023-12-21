@@ -1,4 +1,4 @@
-Stap 1: Ga naar de repo en copy de HTTPS bij de groeen knop <>CODE
+Stap 1: Ga naar de repo en copy de HTTPS bij de groene knop <>CODE
 Stap 2: Open CLI en ga naar je gewenste folder. (In mijn geval C:\Dev\)
 Stap 3: git clone (HTTPS Link).
 Stap 4: cd (map naam)
