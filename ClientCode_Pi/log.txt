@@ -1,0 +1,5 @@
+4.1_loop.cpp working(zonder json blijft in while loop voor id)
+4.0.cpp is official last working(zonder json save file)
+4.0_dev.cpp laatste save naar json(enkel line)
+4.1.cpp laatste save naar json (volle lines nog niet goed geparsed)
+4.2.cpp(id daarna 2 waardes wat van toepassing met mijn stuk dus strip en rgb geef ik erna mee)
