@@ -3,3 +3,5 @@
 4.0_dev.cpp laatste save naar json(enkel line)
 4.1.cpp laatste save naar json (volle lines nog niet goed geparsed)
 4.2.cpp(id daarna 2 waardes wat van toepassing met mijn stuk dus strip en rgb geef ik erna mee)
+v4.3.cpp werkt met mike als id2 alleen json niet integrated
+v4.4.cpp werkt met mike erbij als id 1 of 2
