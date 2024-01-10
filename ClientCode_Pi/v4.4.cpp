@@ -31,6 +31,7 @@ rapidjson::Document jsoninput;
 char buffer[1024] = { 0 };
 ssize_t valread;
 
+//Justin
 void id1_server(){
 
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -51,7 +52,7 @@ void id1_server(){
     }
     
 }
-
+// Mike
 void id2_server(){
     if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         std::cerr << "\n Socket creation error \n";
