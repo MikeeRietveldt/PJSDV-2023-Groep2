@@ -10,6 +10,8 @@
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 
+#include "client.h"
+
 using namespace std;
 
 #define PORT 1234
@@ -31,64 +33,14 @@ rapidjson::Document jsoninput;
 
 // Communication with Arduino server
 char buffer[1024] = { 0 };
-ssize_t valread;
 
-//Justin
-void id1_server(){
-
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("Socket creation error");
-    }
-
-    memset(&server_addr, '0', sizeof(server_addr));
-
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(PORT);
-
-    if (inet_pton(AF_INET, SERVER_IP, &server_addr.sin_addr) <= 0) {
-        perror("Invalid address/ Address not supported");
-    }
-
-    if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-        perror("Connection Failed");
-    }
-    
-}
-// Mike
-void id2_server(){
-    if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        std::cerr << "\n Socket creation error \n";
-        
-    }
-    memset(&serv_addr, '0', sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(MIK_PORT);
-
-    // Convert IPv4 and IPv6 addresses from text to binary form
-    if (inet_pton(AF_INET, "192.168.137.251", &serv_addr.sin_addr) <= 0) {
-        std::cerr << "\nInvalid address/ Address not supported \n";
-        
-    }
-
-    if ((status = connect(client_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0) {
-        std::cerr << "\nConnection Failed \n";
-        
-    }
-}
-void id3_server(){
-
-    
-}
-
-
-
-void sendstriprgb(int led, int rgb) {
+void sendstriprgb(int led, int rgb, Client &client) {
     // Send the extracted values to the server
     char sendBuffer[64];
     snprintf(sendBuffer, sizeof(sendBuffer), "%d,%d,%d", ldr, led, rgb);
     // std::cout << "LDR IS: " << std::endl;
     // std::cout << ldr << std::endl;
-    send(sock, sendBuffer, strlen(sendBuffer), 0);
+    client.sending(sendBuffer, strlen(sendBuffer));
 }
 
 void saveJsonToFile(const rapidjson::Document& json, const std::string& filename) {
@@ -105,17 +57,17 @@ void saveJsonToFile(const rapidjson::Document& json, const std::string& filename
     }
 }
 
-void set_deur(std::string deur){
+void set_deur(std::string deur, Client &client){
      // Open the door
     char sendBuffer[64];
     if(deur == "openDeur"){
         //snprintf(sendBuffer, sizeof(sendBuffer), "%d", open);
-        send(client_fd, &open, sizeof(open), 0);
+        client.sending(&open, sizeof(open));
         cout << "Deur wordt geopend" << endl;
     }
     else if(deur == "sluitDeur"){
         //snprintf(sendBuffer, sizeof(sendBuffer), "%d", dicht);
-        send(client_fd, &dicht, sizeof(dicht), 0);
+        client.sending(&dicht, sizeof(dicht));
         cout << "Deur wordt gesloten" << endl; 
     }
     //std::cout << "opdracht verstuurd" << std::endl;
@@ -123,6 +75,9 @@ void set_deur(std::string deur){
 }
 
 int main() {
+
+    Client client;
+
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Socket creation error");
         return -1;
@@ -152,7 +107,7 @@ int main() {
         
 
         if (id == 1) {
-            id1_server();
+            client.connecting("192.168.137.248");
             std::cout << "Strip=0,1 RGB 0..4" << std::endl;
             std::cout << "Enter choice followed by values note {'strip':1,'rgb':1}:" << std::endl;
 
@@ -175,7 +130,7 @@ int main() {
             int strip = jsoninput["strip"].GetInt();
             int rgbwaarde = jsoninput["rgb"].GetInt();
 
-            valread = read(sock, buffer, sizeof(buffer));
+            client.receive(buffer, sizeof(buffer));
             unsigned int anin0 = atoi(buffer);
             std::cout << "ldr value: " << anin0 << std::endl;
             usleep(500000);
@@ -188,17 +143,16 @@ int main() {
 
             // Clear buffer
             memset(buffer, 0, sizeof(buffer));
-            sendstriprgb(strip, rgbwaarde);
+            sendstriprgb(strip, rgbwaarde, client);
         }
 
         else if(id == 2){
-            id2_server();
+            client.connecting("192.168.137.251");
             
             
             // Print the server response
-            valread = read(client_fd, buffer, sizeof(buffer) - 1);
+            client.receive(buffer, sizeof(buffer));
             std::cout << "Server message to bewaker: " << buffer << "\n";
-            buffer[strcspn(buffer, "\n")] = '\0'; // Remove the used byte(s)
            
             std::cout << "Bewaker options: {'deur':openDeur} or {'deur':sluitDeur}" << std::endl;
             //std::string userInput; //userinput van user
@@ -225,7 +179,7 @@ int main() {
             // Reset the buffer
             //buffer[valread] = '\0';
             memset(buffer, 0, sizeof(buffer));
-            set_deur(waarde_deur);
+            set_deur(waarde_deur, client);
 
             // Close the connected socket
             //close(client_fd);
@@ -233,7 +187,7 @@ int main() {
 
         
 
-        close(sock);
+        client.disconnect();
     }
 
     return 0;
