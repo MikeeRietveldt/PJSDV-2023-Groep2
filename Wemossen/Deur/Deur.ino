@@ -47,8 +47,8 @@ void loop() {
     char c = client.read();  // Lezen van het bericht dat de bewaker heeft gestuurd.
     Serial.write(c);         // Bewaker zijn reactie printen.
     switch (c) {
+      case 0: deurSluiten(); break;
       case 1: deurOpenen(); break;
-      case 2: deurSluiten(); break;
       default: Serial.println("Bewaker heeft een ongeldig bericht meegegeven");
     }
 
