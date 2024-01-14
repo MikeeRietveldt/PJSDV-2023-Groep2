@@ -10,16 +10,16 @@ void Deur::openen(Client &client){
 
     laatstGeopend = clock(); //Zet een timestamp vast.
     deurIsOpen = true;
+    std::cout << "Deur wordt geopend" << std::endl;
 
 } 
-
 
 //deur sluiten
 void Deur::sluiten(Client &client){
     char nul = 0;
     client.sending(&nul, 1); //1 karakter versturen.
-
     deurIsOpen = false;
+    std::cout << "Deur wordt gesloten" << std::endl;
 } 
 
 //Lampje 3x flitsen binnen na aanbellen buiten.
@@ -35,7 +35,6 @@ void Deur::update(Client &client){
     
     if(deurTijd >= 5){
         sluiten(client); // Sluit de deur na 5 seconde
-
     }
 
 

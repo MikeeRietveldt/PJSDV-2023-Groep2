@@ -11,6 +11,7 @@
 #include "rapidjson/stringbuffer.h"
 
 #include "client.h"
+#include "deur.h"
 
 using namespace std;
 
@@ -31,15 +32,12 @@ int status, client_fd; //exc valread
 std::string userInput;
 rapidjson::Document jsoninput;
 
-// Communication with Arduino server
 char buffer[1024] = { 0 };
 
 void sendstriprgb(int led, int rgb, Client &client) {
-    // Send the extracted values to the server
+    // Data doorsturen naar de server
     char sendBuffer[64];
     snprintf(sendBuffer, sizeof(sendBuffer), "%d,%d,%d", ldr, led, rgb);
-    // std::cout << "LDR IS: " << std::endl;
-    // std::cout << ldr << std::endl;
     client.sending(sendBuffer, strlen(sendBuffer));
 }
 
@@ -57,26 +55,22 @@ void saveJsonToFile(const rapidjson::Document& json, const std::string& filename
     }
 }
 
-void set_deur(std::string deur, Client &client){
-     // Open the door
+void set_deur(std::string commando, Deur &deur, Client &client){
+     // Open de deur
     char sendBuffer[64];
-    if(deur == "openDeur"){
-        //snprintf(sendBuffer, sizeof(sendBuffer), "%d", open);
-        client.sending(&open, sizeof(open));
-        cout << "Deur wordt geopend" << endl;
+    if(commando == "openDeur"){
+        deur.openen(client);
     }
-    else if(deur == "sluitDeur"){
-        //snprintf(sendBuffer, sizeof(sendBuffer), "%d", dicht);
+    // sluit de deur
+    else if(commando == "sluitDeur"){
         client.sending(&dicht, sizeof(dicht));
-        cout << "Deur wordt gesloten" << endl; 
     }
-    //std::cout << "opdracht verstuurd" << std::endl;
 
 }
 
 int main() {
-
-    Client client;
+    Deur deur; // object aanmaken
+    Client client; // object aanmaken
 
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Socket creation error");
@@ -91,7 +85,6 @@ int main() {
         std::string userInput;
         std::getline(std::cin, userInput);
 
-        //rapidjson::Document jsoninput;
         jsoninput.Parse(userInput.c_str());
 
         // Validate JSON structure
@@ -112,7 +105,6 @@ int main() {
             std::cout << "Enter choice followed by values note {'strip':1,'rgb':1}:" << std::endl;
 
             // Read JSON input from user
-            //std::string userInput;
             std::getline(std::cin, userInput);
 
             //rapidjson::Document jsoninput;
@@ -169,20 +161,11 @@ int main() {
             // Save the JSON input to a file
             saveJsonToFile(jsoninput, "input.json");
 
-            //lees waarden deur
+            //lees waarde deur
             std::string waarde_deur = jsoninput["deur"].GetString();
-            
 
-            //set_deur(waarde_deur);
-
-           usleep(500000);
-            // Reset the buffer
-            //buffer[valread] = '\0';
-            memset(buffer, 0, sizeof(buffer));
-            set_deur(waarde_deur, client);
-
-            // Close the connected socket
-            //close(client_fd);
+            usleep(500000);
+            set_deur(waarde_deur, deur, client);
         }
 
         
