@@ -1,0 +1,424 @@
+#include <iostream>
+#include <fstream>
+#include <cstring>
+#include <string>
+#include <unistd.h>
+#include <sys/socket.h>
+//#include <wiringPi.h>
+#include <arpa/inet.h>
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/error/en.h"
+
+#define PORT 1234
+#define SERVER_IP "192.168.137.248"
+#define RICH_IP "192.168.137.249"
+#define RICH_PORT 7000
+#define HAK_IP "192.168.137.250"
+#define HAK_PORT 8080
+#define MIK_PORT 80
+#define MIK_IP "192.168.137.251"
+
+int sock = 0;
+int Tsensor;
+int Kadeur;
+int ldr;
+int id;
+struct sockaddr_in server_addr;
+struct sockaddr_in serv_addr;
+char open = 1;
+char dicht = 2;
+int status, client_fd; //exc valread
+
+std::string userInput;
+rapidjson::Document jsoninput;
+rapidjson::Document jsonDoc;
+rapidjson::Document receivedJsonDoc;
+
+// Communication with Arduino server
+char buffer[1024] = { 0 };
+ssize_t valread;
+
+void id1_server(){
+
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("Socket creation error");
+    }
+
+    memset(&server_addr, '0', sizeof(server_addr));
+
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(PORT);
+
+    if (inet_pton(AF_INET, SERVER_IP, &server_addr.sin_addr) <= 0) {
+        perror("Invalid address/ Address not supported");
+    }
+
+    if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+        perror("Connection Failed");
+    }
+    
+}
+
+void id2_server(){
+    if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        std::cerr << "\n Socket creation error \n";
+        
+    }
+    memset(&serv_addr, '0', sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(MIK_PORT);
+
+    // Convert IPv4 and IPv6 addresses from text to binary form
+    if (inet_pton(AF_INET, "192.168.137.251", &serv_addr.sin_addr) <= 0) {
+        std::cerr << "\nInvalid address/ Address not supported \n";
+        
+    }
+
+    if ((status = connect(client_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0) {
+        std::cerr << "\nConnection Failed \n";
+        
+    }
+}
+void id3_server(){
+    if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        std::cerr << "\n Socket creation error \n";
+        
+    }
+    memset(&serv_addr, '0', sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(HAK_PORT);
+
+    // Convert IPv4 and IPv6 addresses from text to binary form
+    if (inet_pton(AF_INET, HAK_IP, &serv_addr.sin_addr) <= 0) {
+        std::cerr << "\nInvalid address/ Address not supported \n";
+        
+    }
+
+    if ((status = connect(client_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0) {
+        std::cerr << "\nConnection Failed \n";
+        
+    }
+}
+void id4_server(){
+    if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        std::cerr << "\n Socket creation error \n";
+        
+    }
+    memset(&serv_addr, '0', sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(RICH_PORT);
+
+    // Convert IPv4 and IPv6 addresses from text to binary form
+    if (inet_pton(AF_INET, RICH_IP, &serv_addr.sin_addr) <= 0) {
+        std::cerr << "\nInvalid address/ Address not supported \n";
+        
+    }
+
+    if ((status = connect(client_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0) {
+        std::cerr << "\nConnection Failed \n";
+        
+    }
+}
+
+
+
+void sendstriprgb(int led, int rgb) {
+    // Send the extracted values to the server
+    char sendBuffer[64];
+    snprintf(sendBuffer, sizeof(sendBuffer), "%d,%d,%d", ldr, led, rgb);
+    // std::cout << "LDR IS: " << std::endl;
+    // std::cout << ldr << std::endl;
+    send(sock, sendBuffer, strlen(sendBuffer), 0);
+}
+void sendTsensor(int waarde, int abc) {
+    // Convert integers to strings
+    std::string abcStr = std::to_string(abc);
+    std::string waardeStr = std::to_string(waarde);
+
+    // Concatenate strings
+    std::string sendString = waardeStr + abcStr;
+    // Send the concatenated string to the server
+    send(client_fd, sendString.c_str(), sendString.length(), 0);
+}
+
+
+void saveJsonToFile(const rapidjson::Document& json, const std::string& filename) {
+    rapidjson::StringBuffer s;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(s);
+    json.Accept(writer);
+
+    std::ofstream file(filename, std::ios::app);  // Open file in append mode
+    if (file.is_open()) {
+        file << s.GetString() << std::endl;  // Append newline after each JSON
+        file.close();
+    } else {
+        std::cerr << "Unable to open file: " << filename << std::endl;
+    }
+}
+
+void set_deur(std::string deur){
+     // Open the door
+    char sendBuffer[64];
+    if(deur == "openDeur"){
+        //snprintf(sendBuffer, sizeof(sendBuffer), "%d", open);
+        send(client_fd, &open, sizeof(open), 0);
+    }
+    else if(deur == "sluitDeur"){
+        //snprintf(sendBuffer, sizeof(sendBuffer), "%d", dicht);
+        send(client_fd, &dicht, sizeof(dicht), 0);
+    }
+    //std::cout << "opdracht verstuurd" << std::endl;
+}
+void sendJsonToArduino(const rapidjson::Document& jsonDoc, int arduinoSocket) {
+    // Convert JSON document to string
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    jsonDoc.Accept(writer);
+
+    // Send JSON string to Arduino
+    send(arduinoSocket, buffer.GetString(), buffer.GetSize(), 0);
+    std::cout << "JSON data sent to Arduino: " << buffer.GetString() << std::endl;
+}
+void receiveJsonFromWemos(rapidjson::Document& receivedJsonDoc, int arduinoSocket) {
+    char buffer[1024] = {0};
+    ssize_t bytesRead = recv(arduinoSocket, buffer, sizeof(buffer) - 1, 0);
+    if (bytesRead > 0) {
+        buffer[bytesRead] = '\0';  // Null-terminate the received data
+        std::cout << "Received JSON data from Wemos: " << buffer << std::endl;
+
+        // Parse the received JSON data
+        receivedJsonDoc.Parse(buffer);
+
+        if (receivedJsonDoc.HasParseError()) {
+            std::cerr << "Error parsing received JSON data. Offset: " << receivedJsonDoc.GetErrorOffset() << std::endl;
+            std::cerr << "Error description: " << rapidjson::GetParseError_En(receivedJsonDoc.GetParseError()) << std::endl;
+        } else if (!receivedJsonDoc.IsObject()) {
+            std::cerr << "Received JSON is not an object" << std::endl;
+            // Print the raw JSON data for debugging
+            std::cerr << "Raw JSON data: " << buffer << std::endl;
+        }
+    } else {
+        std::cerr << "Error receiving JSON data from Wemos" << std::endl;
+    }
+}
+void sendJsonToArduino(const rapidjson::Document& jsonDoc, int arduinoSocket);
+
+int main() {
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("Socket creation error");
+        return -1;
+    }
+    while (true) {
+        std::cout << "ID=1,2,3,4,5" << std::endl;
+        std::cout << "Enter choice followed by values note {'id':1}:" << std::endl;
+
+
+        // Read JSON input from user
+        std::string userInput;
+        std::getline(std::cin, userInput);
+
+        //rapidjson::Document jsoninput;
+        jsoninput.Parse(userInput.c_str());
+
+        // Validate JSON structure
+        if (!jsoninput.IsObject() || !jsoninput.HasMember("id")){
+            std::cerr << "Invalid input. Please enter valid JSON with 'id'" << std::endl;
+            continue;  // Go back to the beginning of the loop
+        }
+
+        // Save the JSON input to a file
+        saveJsonToFile(jsoninput, "input.json");
+
+        id = jsoninput["id"].GetInt();
+        
+
+        if (id == 1) {
+            id1_server();
+            std::cout << "Strip=0,1 RGB 0..4" << std::endl;
+            std::cout << "Enter choice followed by values note {'strip':1,'rgb':1}:" << std::endl;
+
+            // Read JSON input from user
+            //std::string userInput;
+            std::getline(std::cin, userInput);
+
+            //rapidjson::Document jsoninput;
+            jsoninput.Parse(userInput.c_str());
+            // Validate JSON structure
+            if (!jsoninput.IsObject() || !jsoninput.HasMember("strip") || !jsoninput.HasMember("rgb")){
+                std::cerr << "Invalid input. Please enter valid JSON with 'strip' or 'rgb'" << std::endl;
+                continue;  // Go back to the beginning of the loop
+            }
+
+            // Save the JSON input to a file
+            saveJsonToFile(jsoninput, "input.json");
+
+            //lees waarden strip
+            int strip = jsoninput["strip"].GetInt();
+            int rgbwaarde = jsoninput["rgb"].GetInt();
+
+            valread = read(sock, buffer, sizeof(buffer));
+            unsigned int anin0 = atoi(buffer);
+            std::cout << "ldr value: " << anin0 << std::endl;
+            usleep(500000);
+
+            if (anin0 < 180) {
+                ldr = 1;
+            } else {
+                ldr = 0;
+            }
+
+            // Clear buffer
+            memset(buffer, 0, sizeof(buffer));
+            sendstriprgb(strip, rgbwaarde);
+        }
+
+        else if(id == 2){
+            id2_server();
+             std::cout << "Server message to bewaker: " << std::endl;
+            
+            // Print the server response
+            valread = read(client_fd, buffer, sizeof(buffer) - 1);
+            std::cout << "Server message to bewaker: " << buffer << "\n";
+            buffer[strcspn(buffer, "\n")] = '\0'; // Remove the used byte(s)
+           
+            std::cout << "Bewaker options: {'deur':openDeur} or {'deur':sluitDeur}" << std::endl;
+            //std::string userInput; //userinput van user
+            std::getline(std::cin, userInput);
+
+            //rapidjson::Document jsoninput;
+            jsoninput.Parse(userInput.c_str());
+            // Validate JSON structure
+            if (!jsoninput.IsObject() || !jsoninput.HasMember("deur")){
+                std::cerr << "Invalid input. Please enter valid JSON with 'deur':openDeur or 'deur':sluitDeur" << std::endl;
+                continue;  // Go back to the beginning of the loop
+            }
+
+            // Save the JSON input to a file
+            saveJsonToFile(jsoninput, "input.json");
+
+            //lees waarden deur
+            std::string waarde_deur = jsoninput["deur"].GetString();
+            
+
+            //set_deur(waarde_deur);
+
+           usleep(500000);
+            // Reset the buffer
+            //buffer[valread] = '\0';
+            memset(buffer, 0, sizeof(buffer));
+            set_deur(waarde_deur);
+
+            // Close the connected socket
+            close(client_fd);
+        }
+        else if(id == 3){
+            id3_server();
+            // Print the server response
+            valread = read(client_fd, buffer, sizeof(buffer) - 1);
+            std::cout << "Server message to bewaker: " << buffer << "\n";
+            buffer[strcspn(buffer, "\n")] = '\0'; // Remove the used byte(s)
+           
+            //std::cout << "Bewaker options: {'deur':}" << std::endl;
+            //std::string userInput; //userinput van user
+            std::getline(std::cin, userInput);
+
+            //rapidjson::Document jsoninput;
+            jsoninput.Parse(userInput.c_str());
+            // Validate JSON structure
+            if (!jsoninput.IsObject()){
+                std::cerr << "Invalid input. Please enter valid JSON with 'temp'" << std::endl;
+                continue;  // Go back to the beginning of the loop
+            }
+
+            // Save the JSON input to a file
+            saveJsonToFile(jsoninput, "input.json");
+
+            //lees waarden deur
+            //int Tsensor = jsoninput["temp"].GetInt(); 
+            //int Kdeur = jsoninput["kdeur"].GetInt();
+            valread = read(sock, buffer, sizeof(buffer));
+            unsigned int temperatuur = atoi(buffer);
+            std::cout << "temp: " << temperatuur << std::endl;
+            usleep(500000);
+
+            if (temperatuur > 22) {
+                Tsensor = 1;
+                std::cout << "Hello" << std::endl;
+            } else {
+                Tsensor = 0;
+            }
+            memset(buffer, 0, sizeof(buffer));
+            // valread = read(sock, buffer, sizeof(buffer));
+            // unsigned int Kdeur = atoi(buffer);
+            // std::cout << "deurstatus: " << Kdeur << std::endl;
+            // usleep(500000);
+            // if (Kdeur == 1) {
+            //     Kadeur = 1;
+            //     std::cout << "Hello" << std::endl;
+            // } else {
+            //     Kadeur = 0;
+            // }
+            // Reset the buffer
+            memset(buffer, 0, sizeof(buffer));
+            sendTsensor(Tsensor, Kadeur);
+            // Close the connected socket
+            //close(client_fd);D
+        }
+        else if(id == 4){
+            int arduinoSocket = socket(AF_INET, SOCK_STREAM, 0);
+            sockaddr_in arduinoAddress;
+            arduinoAddress.sin_family = AF_INET;
+            arduinoAddress.sin_port = htons(8080); // Replace with your Arduino's port
+            inet_pton(AF_INET, "192.168.137.250", &arduinoAddress.sin_addr); // Replace with your Arduino's IP address
+
+            // Connect to the Arduino
+            connect(arduinoSocket, (struct sockaddr*)&arduinoAddress, sizeof(arduinoAddress));
+
+            // Example JSON data
+            rapidjson::Document jsonDoc;
+            jsonDoc.SetObject();
+            rapidjson::Document::AllocatorType& allocator = jsonDoc.GetAllocator();
+            jsonDoc.AddMember("temp", 24, allocator);
+            jsonDoc.AddMember("kdeur", 1, allocator);
+
+            // Send JSON data to Arduino
+            sendJsonToArduino(jsonDoc, arduinoSocket);
+
+            // Close the socket
+            close(arduinoSocket);
+        }
+                else if(id == 5){
+            int arduinoSocket = socket(AF_INET, SOCK_STREAM, 0);
+            sockaddr_in arduinoAddress;
+            arduinoAddress.sin_family = AF_INET;
+            arduinoAddress.sin_port = htons(8081); // Replace with your Arduino's port
+            inet_pton(AF_INET, "192.168.137.249", &arduinoAddress.sin_addr); // Replace with your Arduino's IP address
+
+            // Connect to the Arduino
+            connect(arduinoSocket, (struct sockaddr*)&arduinoAddress, sizeof(arduinoAddress));
+            //receivedJsonDoc.SetObject();
+            receiveJsonFromWemos(receivedJsonDoc, arduinoSocket);
+            // Example JSON data
+            int receivedTemperature = receivedJsonDoc["temp"].GetInt();
+
+            // Check the condition and set the "temp" value accordingly
+            if (receivedTemperature > 200) {
+                receivedJsonDoc["temp"] = 1;
+            } else {
+                receivedJsonDoc["temp"] = 0;
+            }
+            
+            // rapidjson::Document::AllocatorType& allocator = jsonDoc.GetAllocator();
+            // jsonDoc.AddMember("temp", 290, allocator);
+            
+            // Send JSON data to Arduino
+            sendJsonToArduino(receivedJsonDoc, arduinoSocket);
+
+            // Close the socket
+            //close(arduinoSocket);
+        }
+    return 0;
+}
+}
