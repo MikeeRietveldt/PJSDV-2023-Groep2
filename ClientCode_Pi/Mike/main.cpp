@@ -11,28 +11,32 @@
 #include "rapidjson/stringbuffer.h"
 
 #include "client.h"
-#include "deur.h"
+#include "Domotica/deur.h"
+#include "Domotica/muur.h"
+#include "main.h"
 
 using namespace std;
 
-#define PORT 1234
-#define SERVER_IP "192.168.137.248"
-#define MIK_PORT 80
-#define MIK_IP "192.168.137.251"
 
-int sock = 0;
-int ldr;
-int id;
-struct sockaddr_in server_addr;
-struct sockaddr_in serv_addr;
-char open = 1;
-char dicht = 2;
-int status, client_fd; //exc valread
 
 std::string userInput;
 rapidjson::Document jsoninput;
 
-char buffer[1024] = { 0 };
+
+
+// void readLDR(int ldr, Client &client){
+//     client.receive(buffer, sizeof(buffer));
+//             unsigned int anin0 = atoi(buffer);
+//             std::cout << "ldr value: " << anin0 << std::endl;
+//             usleep(500000);
+//             if (anin0 < 180) {
+//                 ldr = 1;
+//             } else {
+//                 ldr = 0;
+//             }
+//             client.sending(ldr);
+// }
+
 
 void sendstriprgb(int led, int rgb, Client &client) {
     // Data doorsturen naar de server
@@ -71,6 +75,7 @@ void set_deur(std::string commando, Deur &deur, Client &client){
 int main() {
     Deur deur; // object aanmaken
     Client client; // object aanmaken
+    Muur muur;
 
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Socket creation error");
@@ -101,6 +106,7 @@ int main() {
 
         if (id == 1) {
             client.connecting("192.168.137.248");
+            muur.readLDR(client);
             std::cout << "Strip=0,1 RGB 0..4" << std::endl;
             std::cout << "Enter choice followed by values note {'strip':1,'rgb':1}:" << std::endl;
 
@@ -122,20 +128,21 @@ int main() {
             int strip = jsoninput["strip"].GetInt();
             int rgbwaarde = jsoninput["rgb"].GetInt();
 
-            client.receive(buffer, sizeof(buffer));
-            unsigned int anin0 = atoi(buffer);
-            std::cout << "ldr value: " << anin0 << std::endl;
-            usleep(500000);
+            // client.receive(buffer, sizeof(buffer));
+            // unsigned int anin0 = atoi(buffer);
+            // std::cout << "ldr value: " << anin0 << std::endl;
+            // usleep(500000);
 
-            if (anin0 < 180) {
-                ldr = 1;
-            } else {
-                ldr = 0;
-            }
+            // if (anin0 < 180) {
+            //     ldr = 1;
+            // } else {
+            //     ldr = 0;
+            // }
 
             // Clear buffer
             memset(buffer, 0, sizeof(buffer));
-            sendstriprgb(strip, rgbwaarde, client);
+            //sendstriprgb(strip, rgbwaarde, client);
+            muur.sendRGB(strip,rgbwaarde,client);
         }
 
         else if(id == 2){

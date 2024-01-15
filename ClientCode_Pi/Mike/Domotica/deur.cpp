@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "deur.h"
-#include "client.h"
+#include "../client.h"
 
 //deur openen
 void Deur::openen(Client &client){
