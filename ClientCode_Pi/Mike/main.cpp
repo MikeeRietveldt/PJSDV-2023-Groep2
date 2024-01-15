@@ -13,35 +13,20 @@
 #include "client.h"
 #include "Domotica/deur.h"
 #include "Domotica/muur.h"
-#include "main.h"
+#include "Domotica/meubel.h"
+
 
 using namespace std;
-
 
 
 std::string userInput;
 rapidjson::Document jsoninput;
 
 
-
-// void readLDR(int ldr, Client &client){
-//     client.receive(buffer, sizeof(buffer));
-//             unsigned int anin0 = atoi(buffer);
-//             std::cout << "ldr value: " << anin0 << std::endl;
-//             usleep(500000);
-//             if (anin0 < 180) {
-//                 ldr = 1;
-//             } else {
-//                 ldr = 0;
-//             }
-//             client.sending(ldr);
-// }
-
-
 void sendstriprgb(int led, int rgb, Client &client) {
     // Data doorsturen naar de server
     char sendBuffer[64];
-    snprintf(sendBuffer, sizeof(sendBuffer), "%d,%d,%d", ldr, led, rgb);
+    snprintf(sendBuffer, sizeof(sendBuffer), "%d,%d,%d", led, rgb);
     client.sending(sendBuffer, strlen(sendBuffer));
 }
 
@@ -67,28 +52,20 @@ void set_deur(std::string commando, Deur &deur, Client &client){
     }
     // sluit de deur
     else if(commando == "sluitDeur"){
-        client.sending(&dicht, sizeof(dicht));
+        deur.sluiten(client);
     }
 
 }
 
 int main() {
-    Deur deur; // object aanmaken
+    Deur deur("192.168.137.251"); // object aanmaken en ip meegeven
     Client client; // object aanmaken
-    Muur muur;
+    Muur muur("192.168.137.248"); // object aanmaken en ip meegeven
+    Meubel *meubels[] = {&deur, &muur}; // array van meubels voor iteratie
 
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("Socket creation error");
-        return -1;
-    }
     while (true) {
-        std::cout << "ID=1,2,3,4" << std::endl;
-        std::cout << "Enter choice followed by values note {'id':1}:" << std::endl;
 
-
-        // Read JSON input from user
-        std::string userInput;
-        std::getline(std::cin, userInput);
+        deur.update(client);
 
         jsoninput.Parse(userInput.c_str());
 
@@ -101,11 +78,11 @@ int main() {
         // Save the JSON input to a file
         saveJsonToFile(jsoninput, "input.json");
 
-        id = jsoninput["id"].GetInt();
+        int id = jsoninput["id"].GetInt();
         
 
         if (id == 1) {
-            client.connecting("192.168.137.248");
+            client.connecting(muur.geefIp());
             muur.readLDR(client);
             std::cout << "Strip=0,1 RGB 0..4" << std::endl;
             std::cout << "Enter choice followed by values note {'strip':1,'rgb':1}:" << std::endl;
@@ -128,27 +105,14 @@ int main() {
             int strip = jsoninput["strip"].GetInt();
             int rgbwaarde = jsoninput["rgb"].GetInt();
 
-            // client.receive(buffer, sizeof(buffer));
-            // unsigned int anin0 = atoi(buffer);
-            // std::cout << "ldr value: " << anin0 << std::endl;
-            // usleep(500000);
-
-            // if (anin0 < 180) {
-            //     ldr = 1;
-            // } else {
-            //     ldr = 0;
-            // }
-
-            // Clear buffer
-            memset(buffer, 0, sizeof(buffer));
             //sendstriprgb(strip, rgbwaarde, client);
             muur.sendRGB(strip,rgbwaarde,client);
         }
 
         else if(id == 2){
-            client.connecting("192.168.137.251");
+            client.connecting(deur.geefIp());
             
-            
+            char buffer[64];
             // Print the server response
             client.receive(buffer, sizeof(buffer));
             std::cout << "Server message to bewaker: " << buffer << "\n";

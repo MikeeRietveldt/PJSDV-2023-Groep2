@@ -10,7 +10,6 @@ void Muur::readLDR(Client &client){
     client.receive(buffer, sizeof(buffer));
     unsigned int anin0 = atoi(buffer);
     std::cout << "ldr value: " << anin0 << std::endl;
-    //usleep(500000);
 
     if (anin0 < 180) {
         ldrValue = 1;
@@ -33,11 +32,21 @@ void Muur::readPotent(Client &client){
 }
 
 void Muur::sendRGB(int led, int rgb, Client &client) {
-    // ldrValue = ldr;
     ledOnOff = led;
     rgbMode = rgb;
     // Data doorsturen naar de server, similar to sendstriprgb in main.cpp
     char sendBuffer[64];
     snprintf(sendBuffer, sizeof(sendBuffer), "%d,%d,%d", ldrValue, ledOnOff, rgbMode);
     client.sending(sendBuffer, strlen(sendBuffer));
+}
+
+void Muur::update(Client &client){
+
+
+
+}
+
+Muur::Muur(const char* iptje): Meubel(iptje){
+
+
 }

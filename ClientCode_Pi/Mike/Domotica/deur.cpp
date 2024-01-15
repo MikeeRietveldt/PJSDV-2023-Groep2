@@ -39,3 +39,9 @@ void Deur::update(Client &client){
 
 
 }
+
+Deur::Deur(const char* iptje): Meubel(iptje){
+
+    
+
+}
