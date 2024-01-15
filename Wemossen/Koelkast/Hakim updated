@@ -1,0 +1,254 @@
+#include <Wire.h>
+#include "ESP8266WiFi.h"
+#include <ArduinoJson.h>
+
+#define I2C_SDL D1
+#define I2C_SDA D2
+unsigned int teller = 0;
+unsigned int outputs = 0;
+unsigned long timerStartTime = 0;
+unsigned long timerDuration = 10000; // Set the timer duration in milliseconds (10 seconds)
+const int resistorValue = 10000;  // Resistor value in ohms (e.g., 10k ohms at room temperature)
+unsigned int tempsensor = 0;
+unsigned int readAnalogSensor(int ANALOG_CH);
+const int switchPin = 2;     // DI 0 - Connect switch to digital pin 2
+const int fanPin = 4;        // DO 4 - Connect fan to digital pin 4
+const int peltierPin = 5;    // D5 - Connect Peltier to digital pin 5
+const int ntcPin0 = 0;      // AI 0 - Connect NTC 0 to analog pin A0
+const int ntcPin1 = 1;      // AI 1 - Connect NTC 1 to analog pin A1
+const int thresholdTemperature = 25;  // Adjust the threshold temperature as needed
+
+const char* ssid = "piloveswemos";
+const char* password = "hakimhakimhakim";
+WiFiServer server(8080);
+
+  IPAddress ip(192, 168, 137, 250);  // Static IP opzetten
+  IPAddress gateway(192, 168, 137, 1); // Gateway opzetten
+  IPAddress subnet(255, 255, 0, 0); // Subnet opzetten
+void activateFan() {
+  Serial.println("Activate Fan");
+  Wire.beginTransmission(0x38);
+  Wire.write(byte(0x03));
+  Wire.write(byte(0x1F));
+  //Wire.write(byte(0x0F));
+  Wire.endTransmission();
+}
+void setup() {
+  Serial.begin(9600);
+  delay(10);
+  pinMode(switchPin, INPUT);
+  pinMode(D4, OUTPUT);
+  pinMode(peltierPin, OUTPUT);
+  Wire.begin();
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  WiFi.config(ip, gateway, subnet);
+
+  Serial.println("IP Address: ");
+  Serial.println(WiFi.localIP());
+  server.begin();
+  Serial.println("Server started.");
+}
+
+void loop() {
+  //   Wire.beginTransmission(0x38);
+  // Wire.write(byte(0x03));
+  // Wire.write(byte(0x2F));
+  // //Wire.write(byte(0x0F));
+  // Wire.endTransmission();
+  WiFiClient client = server.available();
+  if (client) {
+  Wire.beginTransmission(0x36);
+  Wire.write(byte(0xA2));
+  Wire.write(byte(0x03));
+  Wire.endTransmission();
+  Serial.println("Client connected");
+  tempsensor = readAnalogSensor(0);
+   client.println(tempsensor);
+  // Serial.println(tempsensor);
+// Read the first line of the request
+  String request = client.readStringUntil('\r');
+  Serial.println(request);
+  client.flush();
+
+  // Parse the JSON data
+  DynamicJsonDocument jsonDoc(1024);
+  deserializeJson(jsonDoc, request);
+
+  // Print JSON data
+  Serial.println("Received JSON data:");
+  serializeJsonPretty(jsonDoc, Serial);
+
+  int temperature = jsonDoc["temp"].as<int>();
+    Wire.beginTransmission(0x38);
+    Wire.write(byte(0x03));
+  if (temperature > 22) {
+    Wire.write(byte(0x0F));
+    Serial.println("it works");
+  }
+  Wire.endTransmission();
+  if(temperature < 22){
+    Serial.println("it do not workie");
+  }
+
+  // Send a response back to the client
+  client.println("HTTP/1.1 200 OK");
+  client.println("Content-Type: text/html");
+  client.println();
+  client.println("<html><body><h1>JSON Received</h1></body></html>");
+  client.flush();
+
+  // Close the connection
+  delay(1);
+  Serial.println("Client disconnected");
+
+  // Wire.beginTransmission(0x38);
+  // Wire.write(byte(0x03));
+  // Wire.write(byte(0x1F));
+  // //  if(tempsensor > 23){
+  // //   Wire.write(byte(0x0F));
+  // //   }
+  // Wire.endTransmission();
+    // Check if input is non-empty
+    
+  // Wire.beginTransmission(0x38);
+  // Wire.write(byte(0x00));
+  // Wire.endTransmission();
+  // Wire.requestFrom(0x38, 1);
+  // unsigned int inputs = Wire.read();
+  
+  // // Check if DI 0 is open and start the timer
+
+  // if ((inputs & 0x01) == 0x00) {  // DI 0 is open
+  //   if (timerStartTime == 0) {
+  //     timerStartTime = millis();
+  //     Serial.println("Koelkast open");
+  //   }
+  // }
+  // if ((inputs & 0x01) == 0x00){
+  //     client.println("1");
+  //      Serial.println("1");
+  // }
+  // // Check if the timer has elapsed (10 seconds)
+  // if (timerStartTime > 0 && millis() - timerStartTime >= timerDuration) {
+  //   Serial.println("Bewaker, koelkast staat open!");
+  // }
+  // if ((inputs & 0x01) == 0x01) {
+  //   timerStartTime = 0;
+  // }
+
+ //String input = client.readStringUntil('\n');
+//  if (!input.isEmpty()) {
+//       // Perform actions based on client input
+//       Serial.println(input);
+//          if(input = 10){
+//           Serial.println("Activate Fan");
+//     Wire.beginTransmission(0x38);
+//     Wire.write(byte(0x03));
+//     Wire.write(byte(0x1F));
+//     Wire.write(byte(0x0F));
+//     Wire.endTransmission();
+//     }
+//     }
+//  }
+// Read the incoming data as a JSON string
+    // String jsonString = client.readStringUntil('\n');
+    //     // Print the received JSON string for debugging
+    // Serial.println("Received JSON string: " + jsonString);
+
+    // // Parse the JSON string
+    // DynamicJsonDocument jsonDoc(1024); // Adjust the size based on your JSON structure
+    // DeserializationError error = deserializeJson(jsonDoc, jsonString);
+
+    // // Check for parsing errors
+    // if (error) {
+    //   Serial.print("JSON parsing failed: ");
+    //   Serial.println(error.c_str());
+    //   return;
+    // }
+
+    // // Access the values from the JSON document
+    // int temp = jsonDoc["temp"].as<int>();
+    // int kdeur = jsonDoc["kdeur"].as<int>();
+
+    // // Do something with the values
+    // Serial.print("Received JSON data - temp: ");
+    // Serial.print(temp);
+    // Serial.print(", kdeur: ");
+    // Serial.println(kdeur);
+  // Wire.requestFrom(0x36, 4);
+  // unsigned int anin0 = Wire.read() & 0x03;
+  // anin0 = anin0 << 8;
+  // anin0 = anin0 | Wire.read();
+  // unsigned int anin1 = Wire.read() & 0x03;
+  // anin1 = anin1 << 8;
+  // anin1 = anin1 | Wire.read();
+  // delay(500);
+  }
+}
+unsigned int readAnalogSensor(int ANALOG_CH) {
+  const float R_REF = 10000.0; // Reference resistor value in ohms
+  const float B_VALUE = 3984.0; // B-value of the NTC thermistor
+
+  Wire.requestFrom(0x36, 4);
+
+  if (ANALOG_CH == 0) {
+    unsigned int sensorValue0 = Wire.read() & 0x03;
+    sensorValue0 = (sensorValue0 << 8) | Wire.read();
+    
+    // Convert raw analog value to resistance
+    float resistance0 = R_REF * (1023.0 / sensorValue0 - 1.0);
+
+    // Steinhart-Hart equation to convert resistance to temperature in Celsius
+    float temperatureCelsius0 = 1.0 / (1.0 / 298.15 + 1.0 / B_VALUE * log(resistance0 / 10000.0)) - 273.15;
+
+    return temperatureCelsius0;
+  }
+
+  if (ANALOG_CH == 1) {
+    // Skip two bytes
+    Wire.read();
+    Wire.read();
+
+    unsigned int sensorValue1 = Wire.read() & 0x03;
+    sensorValue1 = (sensorValue1 << 8) | Wire.read();
+    
+    // Convert raw analog value to resistance
+    float resistance1 = R_REF * (1023.0 / sensorValue1 - 1.0);
+
+    // Steinhart-Hart equation to convert resistance to temperature in Celsius
+    float temperatureCelsius1 = 1.0 / (1.0 / 298.15 + 1.0 / B_VALUE * log(resistance1 / 10000.0)) - 273.15;
+
+    return temperatureCelsius1;
+  }
+
+  return 0.0; // Default return value (can be adjusted based on your application)
+}
+// unsigned int readAnalogSensor(int ANALOG_CH) {
+//   unsigned int sensorValue0;
+//   unsigned int sensorValue1;
+//   Wire.requestFrom(0x36, 4);
+//   // Lees MAX11647
+
+//   if (ANALOG_CH == 0) {
+//     sensorValue0 = Wire.read() & 0x03;
+//     sensorValue0 = sensorValue0 << 8;
+//     sensorValue0 = sensorValue0 | Wire.read();
+//     return sensorValue0;
+//   }
+//   if (ANALOG_CH == 1) {
+//     Wire.read();
+//     Wire.read();
+//     sensorValue1 = Wire.read() & 0x03;
+//     sensorValue1 = sensorValue1 << 8;
+//     sensorValue1 = sensorValue1 | Wire.read();
+//     return sensorValue1;
+//   }
+//   return 0;
+// }
+    // Close the connection
+    //client.stop();
+    //Serial.println("Client disconnected.");
