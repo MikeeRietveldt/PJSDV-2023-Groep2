@@ -9,7 +9,7 @@ const char* password = "112233ja";  // Password naar de wifi
 unsigned long vorigeGedrukt;  // Voor de timer
 int knopjes;
 
-WiFiServer wifiServer(80);  // Poort van de server
+WiFiServer wifiServer(8080);  // Poort van de server
 
 
 #define I2C_SDL D1
@@ -49,14 +49,14 @@ void loop() {
     switch (c) {
       case 0: deurSluiten(); break;
       case 1: deurOpenen(); break;
+      case 2: flitsAan(); break;
+      case 3: flitsUit(); break;
       default: Serial.println("Bewaker heeft een ongeldig bericht meegegeven");
     }
 
 
     // stop de verbinding met de client en geef melding wanneer de client disconnect
     client.stop();
-    Serial.println("Bewaker disconnected");
-    delay(10);
   }
 }
 
@@ -107,9 +107,6 @@ unsigned int knoppen() {
   Wire.requestFrom(0x38, 1);                // 1 byte uitlezen (alle pinnen die op input staan)
   unsigned int inputWaardes = Wire.read();  // hier lees je waarde van knopje met I2C
 
-  //debugging
-  // Serial.print("Input Waardes: ");
-  // Serial.println(inputWaardes, BIN);
 
   return inputWaardes & 0x03;  // return de waardes van de input
 }
@@ -119,9 +116,7 @@ void deurOpenen() {
 
   myservo.write(deurOpen);  // Deur openen
   Serial.println("Deur geopent");
-  delay(5000);  // 5 seconde wachten.
 
-  deurSluiten();  // De deur weer sluiten
 }
 
 void deurSluiten() {
@@ -130,17 +125,26 @@ void deurSluiten() {
   myservo.write(deurDicht);  // Deur sluiten
 }
 
+//Lichtje aan
+void flitsAan() {
+  //Waarde geven aan (IO4-IO7)
+  Wire.beginTransmission(0x38); // slave adress
+  Wire.write(byte(0x01)); // juiste register kiezen
+  Wire.write(byte(3 << 4)); // waarde schrijven
+  Wire.endTransmission(); // eindigen van transmissie
+}
+
+//Lichtje uit
+void flitsUit() {
+  //Waarde geven aan (IO4-IO7)
+  Wire.beginTransmission(0x38); // slave adress
+  Wire.write(byte(0x01)); // juiste register kiezen
+  Wire.write(byte(0)); // waarde schrijven
+  Wire.endTransmission(); // eindigen van transmissie
+}
+
 // Data type Client met een refference naar de client zodat je gebruikt kunt maken van de client.print (met pointer wordt dat client->print)
 void printKnopjes(Client& client, int knopjes) {
-  //Serial.print(knopjes); //debugging
-  if (knopjes == 0) {
-    client.print("Er is geen activiteit bij de deur.");
-  } else if (knopjes == 1) {
-    client.print("Let op! Henk drukt op de deurknop binnen.");
-  } else if (knopjes == 2) {
-    client.print("Let op! Er staan bezoekers buiten.");
-  } else if (knopjes == 3) {
-    client.print("Let op! Beide deur knoppen worden ingedrukt.");
-  }
-  Serial.println("Bewaker is op de hoogte gesteld van de huidige situatie.");
+client.write(knopjes); // doorsturen van knopje waarde
+Serial.println("Bewaker is op de hoogte gesteld van de huidige situatie.");
 }

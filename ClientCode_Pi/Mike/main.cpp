@@ -64,11 +64,13 @@ int main() {
     Meubel *meubels[] = {&deur, &muur}; // array van meubels voor iteratie
 
     while (true) {
-
-        deur.update(client);
+        for (int i = 0; i < sizeof(meubels) / sizeof(meubels[i]); i++){
+        client.connecting(meubels[i]->geefIp()); //Connectie maken met juiste device en bijbehorende IP
+        meubels[i]->update(client); // Update van huidige device.
+        client.disconnect(); // Disconnecten zodat we door kunnen naar volgende device
+        }
 
         jsoninput.Parse(userInput.c_str());
-
         // Validate JSON structure
         if (!jsoninput.IsObject() || !jsoninput.HasMember("id")){
             std::cerr << "Invalid input. Please enter valid JSON with 'id'" << std::endl;
@@ -77,10 +79,8 @@ int main() {
 
         // Save the JSON input to a file
         saveJsonToFile(jsoninput, "input.json");
-
         int id = jsoninput["id"].GetInt();
         
-
         if (id == 1) {
             client.connecting(muur.geefIp());
             muur.readLDR(client);
@@ -139,9 +139,8 @@ int main() {
             set_deur(waarde_deur, deur, client);
         }
 
-        
-
         client.disconnect();
+
     }
 
     return 0;

@@ -23,8 +23,10 @@ void Deur::sluiten(Client &client){
 } 
 
 //Lampje 3x flitsen binnen na aanbellen buiten.
+//Wanneer er buiten aangebeld wordt, moet het lampje van binnen gaan flitsen
 void Deur::belflits(Client &client){
-
+    
+    laatsteFlits = clock();
 
 }
 
