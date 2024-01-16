@@ -68,31 +68,58 @@ void readPotent(){
   Wire.write(byte(0x03));
   Wire.write(byte(0x0F));
   Wire.endTransmission();
-  if (anin1 > 1000){
+//  if (anin1 > 1000){
+//    FastLED.setBrightness(100);
+//    setLED(200,200,200);
+//    FastLED.show();
+//  } else if(anin1 > 800){
+//    FastLED.setBrightness(80);
+//    setLED(170,170,170);
+//    FastLED.show();
+//  } else if(anin1 > 600){
+//    FastLED.setBrightness(60);
+//    setLED(150,150,150);
+//    FastLED.show();
+//  } else if(anin1 > 400){
+//    FastLED.setBrightness(40);
+//    setLED(100,100,100);
+//    FastLED.show();
+//  } else if (anin1 > 200){
+//    FastLED.setBrightness(20);
+//    setLED(50,50,50);
+//    FastLED.show();
+//  } else {
+//    setLED(0,0,0);
+//    FastLED.show();
+//  }
+}
+
+void actPot(int value) {
+  if (value == 4) {
     FastLED.setBrightness(100);
-    setLED(200,200,200);
+    setLED(200, 200, 200);
     FastLED.show();
-  } else if(anin1 > 800){
+  } else if (value == 3) {
     FastLED.setBrightness(80);
-    setLED(170,170,170);
+    setLED(170, 170, 170);
     FastLED.show();
-  } else if(anin1 > 600){
+  } else if (value == 2) {
     FastLED.setBrightness(60);
-    setLED(150,150,150);
+    setLED(150, 150, 150);
     FastLED.show();
-  } else if(anin1 > 400){
+  } else if (value == 1) {
     FastLED.setBrightness(40);
-    setLED(100,100,100);
+    setLED(100, 100, 100);
     FastLED.show();
-  } else if (anin1 > 200){
-    FastLED.setBrightness(20);
-    setLED(50,50,50);
+  } else if (value == 0) {
+    FastLED.setBrightness(0);
+    setLED(0, 0, 0);
     FastLED.show();
   } else {
-    setLED(0,0,0);
-    FastLED.show();
+    Serial.println("Error getting pot value");
   }
 }
+
 
 void setLED(int x, int y, int z) {
   FastLED.setBrightness(100);
@@ -200,6 +227,24 @@ void rgbValue(int value){
   }
 }
 
+int splitString(String input, char delimiter, String values[], int maxValues) {
+  int valueCount = 0;
+  int start = 0;
+  int end = input.indexOf(delimiter);
+
+  while (end >= 0 && valueCount < maxValues) {
+    values[valueCount++] = input.substring(start, end);
+    start = end + 1;
+    end = input.indexOf(delimiter, start);
+  }
+
+  // Add the last part of the string
+  if (start < input.length() && valueCount < maxValues) {
+    values[valueCount++] = input.substring(start);
+  }
+
+  return valueCount;
+}
 
 void loop(void) {
   // Create a client that will connect to the server
@@ -215,16 +260,18 @@ void loop(void) {
 
   readLDR();
   readPotent();
-  Serial.println(anin0);
-  Serial.println(anin1);
+//  Serial.println(anin0);
+//  Serial.println(anin1);
 
   while (client.connected()) {
     // If a client is connected
     Serial.println("Client connected");
     Serial.println(teller);
     DynamicJsonDocument jsonDoc(256);
-    jsonDoc["ldr"] = anin0;
-    jsonDoc["pot"] = anin1;
+//    jsonDoc["ldr"] = anin0;
+//    jsonDoc["pot"] = anin1;
+    jsonDoc["ldr"] = 189;
+    jsonDoc["pot"] = 829;
 
     // Serialize the JSON object to a string
     String jsonString;
@@ -235,13 +282,10 @@ void loop(void) {
     Serial.println(jsonString);
 
     // Send LDR value to client
-//    client.println(anin0);
-//    client.println(",");
-//    client.println(anin1);
     Serial.println(anin0);
     Serial.println("meter");
     Serial.println(anin1);
-  
+
     // Set a timeout for reading from the client (e.g., 5 seconds)
     // client.setTimeout(5000);
 
@@ -250,52 +294,40 @@ void loop(void) {
 
     // Check if input is non-empty
     if (!input.isEmpty()) {
-      // Perform actions based on client input
-      if (sscanf(input.c_str(), "%d,%d", &ldr, &pot) == 2){
-      //if(input.length() == 2){ // for reading in the ldr value if it contains only 1 value
-        Serial.println("Ldr en Pot: ");
-        Serial.println(input);
-        //if (sscanf(input.c_str(), "%d,%d", &ldr, &pot) == 2) {
-        Serial.println("LDRVANCLIENT");
+      int ldr, pot, strip, rgb;
+
+      // Split the input into an array of strings using ',' as the delimiter
+      String values[3];
+      int count = splitString(input, ',', values, 3);
+
+      // Check the number of values obtained
+      if (count == 2) {
+        // Two values received (ldr and pot)
+        ldr = values[0].toInt();
+        Serial.print("ldr is: ");
         Serial.println(ldr);
-        Serial.println("POTVANCLIENT");
+        pot = values[1].toInt();
+        Serial.println("pot is: ");
         Serial.println(pot);
         actLdr(ldr);
-        //} else {
-          //Serial.println("Error wrong format");
-        //}
-      }
-      //else {
-        //Serial.println(input);
-  
-        // Extract three integer values from the received string
-        
-        else if (sscanf(input.c_str(), "%d,%d,%d", &ldr, &strip, &rgb) == 3) {
-          // Do something with the three values
-          Serial.print("Received values: ");
-          Serial.print(ldr);
-          Serial.print(", ");
-          Serial.print(strip);
-          Serial.print(", ");
-          Serial.println(rgb);
-  
-          // Process LDR value received from client
-          actLdr(ldr);
-  
-          // Process LED status and RGB value
-          ledStatus(strip);
-          if (ldr == 0) {
-            rgbValue(rgb);
-          }
-        } else {
-          Serial.println("Invalid input format");
+        actPot(pot);
+      } else if (count == 3) {
+        // Three values received (ldr, strip, and rgb)
+        ldr = values[0].toInt();
+        Serial.println("3 waarden doorgaan");
+        Serial.println(input);
+        strip = values[1].toInt();
+        rgb = values[2].toInt();
+        actLdr(ldr);
+        ledStatus(strip);
+        if (ldr == 0) {
+          rgbValue(rgb);
         }
-  
-        client.flush();
+      } else {
+        Serial.println("Invalid input format");
       }
-    }
-    teller++;
-  //}
 
-  //delay(500);
+      client.flush();
+    }
+  }
 }
