@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <fcntl.h> 
 
 #include "client.h"
 
@@ -38,11 +39,25 @@ void Client::sending(const char* buffer, size_t length){
 
 // ontvangt de data.
 void Client::receive(char* buffer, size_t size){
-     // Print the server response
-        int valread = read(sock, buffer, size - 1); //
+     // Zorgen dat read() niet meer blocking is.
+    int flags = fcntl(sock, F_GETFL, 0); // flags instellen
+    fcntl(sock, F_SETFL, flags | O_NONBLOCK); // non-blocking mode aan zetten
+
+    // Uitlezen van inkomende data
+    int valread = read(sock, buffer, size - 1);
+    buffer[valread] = '\0';
+
+    if (valread > 0) {
         std::cout << "Server message to bewaker: " << buffer << "\n";
-        buffer[valread] = '\0';
-}  
+    } else if (valread == 0) {
+        std::cout << "Connection closed by the server\n";
+    } else if (errno == EWOULDBLOCK || errno == EAGAIN){
+
+    }  // Afhandelen van andere errors
+        else{
+            perror("read");
+            } 
+}
 
 // disconnect van de huidige server.
 void Client::disconnect(){

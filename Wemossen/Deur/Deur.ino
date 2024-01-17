@@ -145,6 +145,6 @@ void flitsUit() {
 
 // Data type Client met een refference naar de client zodat je gebruikt kunt maken van de client.print (met pointer wordt dat client->print)
 void printKnopjes(Client& client, int knopjes) {
-client.write(knopjes); // doorsturen van knopje waarde
+client.write('0' + knopjes); // doorsturen van knopje waarde
 Serial.println("Bewaker is op de hoogte gesteld van de huidige situatie.");
 }
