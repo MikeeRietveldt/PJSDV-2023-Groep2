@@ -94,33 +94,6 @@ void readPotent(){
 //  }
 }
 
-void actPot(int value) {
-  if (value == 4) {
-    FastLED.setBrightness(100);
-    setLED(200, 200, 200);
-    FastLED.show();
-  } else if (value == 3) {
-    FastLED.setBrightness(80);
-    setLED(170, 170, 170);
-    FastLED.show();
-  } else if (value == 2) {
-    FastLED.setBrightness(60);
-    setLED(150, 150, 150);
-    FastLED.show();
-  } else if (value == 1) {
-    FastLED.setBrightness(40);
-    setLED(100, 100, 100);
-    FastLED.show();
-  } else if (value == 0) {
-    FastLED.setBrightness(0);
-    setLED(0, 0, 0);
-    FastLED.show();
-  } else {
-    Serial.println("Error getting pot value");
-  }
-}
-
-
 void setLED(int x, int y, int z) {
   FastLED.setBrightness(100);
   for (int i = 0; i < NUM_LEDS; i++) {
@@ -150,6 +123,36 @@ void actLdr(int value){
   }
   else {
     Serial.println("Error getting ldr value");
+  }
+}
+
+void actPot(int value) {
+  if (value == 5) {
+    FastLED.setBrightness(100);
+    setLED(200, 200, 200);
+    FastLED.show();
+  } else if (value == 4) {
+    FastLED.setBrightness(80);
+    setLED(170, 170, 170);
+    FastLED.show();
+  } else if (value == 3) {
+    FastLED.setBrightness(60);
+    setLED(150, 150, 150);
+    FastLED.show();
+  } else if (value == 2) {
+    FastLED.setBrightness(40);
+    setLED(100, 100, 100);
+    FastLED.show();
+  } else if (value == 1) {
+    FastLED.setBrightness(20);
+    setLED(50, 50, 50);
+    FastLED.show();
+  } else if (value == 0) {
+    FastLED.setBrightness(0);
+    setLED(0, 0, 0);
+    FastLED.show();
+  } else {
+    Serial.println("Error getting pot value");
   }
 }
 
@@ -246,6 +249,8 @@ int splitString(String input, char delimiter, String values[], int maxValues) {
   return valueCount;
 }
 
+
+
 void loop(void) {
   // Create a client that will connect to the server
   WiFiClient client = wifiServer.available();
@@ -260,18 +265,16 @@ void loop(void) {
 
   readLDR();
   readPotent();
-//  Serial.println(anin0);
-//  Serial.println(anin1);
+  Serial.println(anin0);
+  Serial.println(anin1);
 
   while (client.connected()) {
     // If a client is connected
     Serial.println("Client connected");
     Serial.println(teller);
     DynamicJsonDocument jsonDoc(256);
-//    jsonDoc["ldr"] = anin0;
-//    jsonDoc["pot"] = anin1;
-    jsonDoc["ldr"] = 189;
-    jsonDoc["pot"] = 829;
+    jsonDoc["ldr"] = anin0;
+    jsonDoc["pot"] = anin1;
 
     // Serialize the JSON object to a string
     String jsonString;
@@ -282,10 +285,13 @@ void loop(void) {
     Serial.println(jsonString);
 
     // Send LDR value to client
+//    client.println(anin0);
+//    client.println(",");
+//    client.println(anin1);
     Serial.println(anin0);
     Serial.println("meter");
     Serial.println(anin1);
-
+  
     // Set a timeout for reading from the client (e.g., 5 seconds)
     // client.setTimeout(5000);
 
@@ -293,7 +299,7 @@ void loop(void) {
     String input = client.readStringUntil('\n');
 
     // Check if input is non-empty
-    if (!input.isEmpty()) {
+     if (!input.isEmpty()) {
       int ldr, pot, strip, rgb;
 
       // Split the input into an array of strings using ',' as the delimiter
@@ -310,7 +316,9 @@ void loop(void) {
         Serial.println("pot is: ");
         Serial.println(pot);
         actLdr(ldr);
-        actPot(pot);
+        if(ldr == 0){
+          actPot(pot);
+        }
       } else if (count == 3) {
         // Three values received (ldr, strip, and rgb)
         ldr = values[0].toInt();
@@ -323,11 +331,40 @@ void loop(void) {
         if (ldr == 0) {
           rgbValue(rgb);
         }
-      } else {
-        Serial.println("Invalid input format");
       }
-
-      client.flush();
+        else {
+          Serial.println(input);
+  
+        // Extract three integer values from the received string
+        
+//        if (sscanf(input.c_str(), "%d,%d,%d", &ldr, &strip, &rgb) == 3) {
+//          // Do something with the three values
+//          Serial.print("Received values: ");
+//          Serial.print(ldr);
+//          Serial.print(", ");
+//          Serial.print(strip);
+//          Serial.print(", ");
+//          Serial.println(rgb);
+//  
+//          // Process LDR value received from client
+//          actLdr(ldr);
+//  
+//          // Process LED status and RGB value
+//          ledStatus(strip);
+//          if (ldr == 0) {
+//            rgbValue(rgb);
+//          }
+//        } else {
+//          Serial.println("Invalid input format");
+//        }
+  
+        
+      }
     }
+    client.flush();
+    teller++;
   }
 }
+
+
+  //delay(500);
