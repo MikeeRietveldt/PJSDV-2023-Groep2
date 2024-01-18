@@ -1,1 +1,1 @@
-g++ main.cpp client.cpp Domotica/deur.cpp Domotica/muur.cpp -o test
+g++ main.cpp client.cpp Domotica/deur.cpp Domotica/muur.cpp json.cpp -o test
