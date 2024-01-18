@@ -89,7 +89,7 @@ void loop() {
 
 // verbinding maken met wifi
 void StartWifi() {
-  IPAddress ip(192, 168, 137, 249);  // Static IP opzetten
+  IPAddress ip(192, 168, 137, 251);  // Static IP opzetten
   IPAddress gateway(192, 168, 137, 1); // Gateway opzetten
   IPAddress subnet(255, 255, 0, 0); // Subnet opzetten
   // statisch ip vaststellen

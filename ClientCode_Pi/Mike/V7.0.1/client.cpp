@@ -40,7 +40,7 @@ void Client::sending(const char* buffer, size_t length){
 void Client::receive(char* buffer, size_t size){
      // Print the server response
         int valread = read(sock, buffer, size - 1); //
-        std::cout << "Server message to bewaker: " << buffer << "\n";
+        std::cout << "Succesvolle read : " << buffer << "\n";
         buffer[valread] = '\0';
 }  
 
