@@ -138,7 +138,7 @@ unsigned int knoppen() {
 }
 
 void deurOpenen() {
-  int deurOpen = 0;  // Waarde waarop de deur netjes open staat
+  int deurOpen = 175;  // Waarde waarop de deur netjes open staat
 
   myservo.write(deurOpen);  // Deur openen
   Serial.println("Deur geopent");
@@ -146,7 +146,7 @@ void deurOpenen() {
 }
 
 void deurSluiten() {
-  int deurDicht = 0;  // Waarde waarop de deur netjes dicht is
+  int deurDicht = 70;  // Waarde waarop de deur netjes dicht is
   Serial.println("Deur gesloten.");
   myservo.write(deurDicht);  // Deur sluiten
 }
