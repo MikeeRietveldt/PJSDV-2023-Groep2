@@ -1,0 +1,1 @@
+voor dev.cpp het werkt deels while loop klopt alleen server ontvangt geen goede data
