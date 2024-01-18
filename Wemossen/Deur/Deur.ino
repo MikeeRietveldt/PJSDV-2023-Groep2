@@ -6,6 +6,14 @@
 const char* ssid = "BeamersWifi";   // Connectie naar de wifi SSID
 const char* password = "112233ja";  // Password naar de wifi
 
+bool isFlitsActief = false;
+unsigned long vorigeFlitsTijd = 0;
+const unsigned long flitsInterval = 500; // 500 milliseconden voor elke flits
+int flitsTeller = 0;
+const int maxFlitsen = 6; // 3 keer aan en 3 keer uit
+
+
+
 unsigned long vorigeGedrukt;  // Voor de timer
 int knopjes;
 
@@ -47,12 +55,30 @@ void loop() {
     char c = client.read();  // Lezen van het bericht dat de bewaker heeft gestuurd.
     Serial.write(c);         // Bewaker zijn reactie printen.
     switch (c) {
-      case 0: deurSluiten(); break;
-      case 1: deurOpenen(); break;
-      case 2: flitsAan(); break;
-      case 3: flitsUit(); break;
+      case '0': deurSluiten(); break;
+      case '1': deurOpenen(); break;
+      case '2': startFlitsRoutine(); break;
       default: Serial.println("Bewaker heeft een ongeldig bericht meegegeven");
     }
+
+    if (isFlitsActief) {
+    if (millis() - vorigeFlitsTijd >= flitsInterval) {
+      vorigeFlitsTijd = millis();
+
+      if (flitsTeller % 2 == 0) {
+        flitsAan();  // Implementeer deze functie om de flitser aan te zetten
+      } else {
+        flitsUit();  // Implementeer deze functie om de flitser uit te zetten
+      }
+
+      flitsTeller++;
+
+      if (flitsTeller >= maxFlitsen) {
+        isFlitsActief = false;
+      }
+    }
+  }
+    
 
 
     // stop de verbinding met de client en geef melding wanneer de client disconnect
@@ -123,6 +149,13 @@ void deurSluiten() {
   int deurDicht = 0;  // Waarde waarop de deur netjes dicht is
   Serial.println("Deur gesloten.");
   myservo.write(deurDicht);  // Deur sluiten
+}
+
+//Routine starten
+void startFlitsRoutine() {
+  isFlitsActief = true;
+  flitsTeller = 0;
+  vorigeFlitsTijd = millis();
 }
 
 //Lichtje aan
