@@ -42,9 +42,12 @@ void loop() {
 
   // stukje voor de client verbinding
   if (client) {
-    knopjes = knoppen();  // knopjes gelijk stellen aan uitkomst van knoppen functie
-    // Serial.print(knopjes); // debugging
-    printKnopjes(client, knopjes);
+        knopjes = knoppen();  // Read button states
+
+        // Send the button state to the client
+        if(knopjes != 0) {
+            client.write('0' + knopjes); // Convert to char and send
+        }
 
 
     // Wachten tot de client bytes vertstuurd
@@ -165,6 +168,7 @@ void flitsAan() {
   Wire.write(byte(0x01)); // juiste register kiezen
   Wire.write(byte(3 << 4)); // waarde schrijven
   Wire.endTransmission(); // eindigen van transmissie
+  Serial.println("flits");
 }
 
 //Lichtje uit
@@ -176,8 +180,3 @@ void flitsUit() {
   Wire.endTransmission(); // eindigen van transmissie
 }
 
-// Data type Client met een refference naar de client zodat je gebruikt kunt maken van de client.print (met pointer wordt dat client->print)
-void printKnopjes(Client& client, int knopjes) {
-client.write('0' + knopjes); // doorsturen van knopje waarde
-Serial.println("Bewaker is op de hoogte gesteld van de huidige situatie.");
-}

@@ -5,7 +5,7 @@
 
 //deur openen
 void Deur::openen(Client &client){
-    char een = 1;
+    char een = '1';
     client.sending(&een, 1); //1 karakter versturen.
 
     laatstGeopend = clock(); //Zet een timestamp vast.
@@ -16,8 +16,8 @@ void Deur::openen(Client &client){
 
 //deur sluiten
 void Deur::sluiten(Client &client){
-    char nul = 0;
-    client.sending(&nul, 1); //1 karakter versturen.
+    char drie = '3';
+    client.sending(&drie, 1); //1 karakter versturen.
     deurIsOpen = false;
     std::cout << "Deur wordt gesloten" << std::endl;
 } 
@@ -26,21 +26,26 @@ void Deur::sluiten(Client &client){
 //Wanneer er buiten aangebeld wordt, moet het lampje van binnen gaan flitsen
 void Deur::belflits(Client &client){
     
+    char twee = '2';
+    client.sending(&twee, 1); //1 karakter versturen.
     laatsteFlits = clock();
 
 }
 
 //Live update functie
-void Deur::update(Client &client){
-    clock_t nu = clock(); // huidige tijd dat het programma draait.
-    clock_t deurTijd = (nu - laatstGeopend) / CLOCKS_PER_SEC; // in seconde berekenen hoelang deur open is.
-    
-    if(deurTijd >= 5){
-        sluiten(client); // Sluit de deur na 5 seconde
+void Deur::update(Client &client) {
+    if (deurIsOpen) {
+        clock_t nu = clock();
+        double deurTijd = double(nu - laatstGeopend) / CLOCKS_PER_SEC;
+
+        std::cout << "Door has been open for " << deurTijd << " seconds." << std::endl;
+
+        if (deurTijd >= 0.0025) {
+            sluiten(client);
+        }
     }
-
-
 }
+
 
 Deur::Deur(const char* iptje): Meubel(iptje){
 
