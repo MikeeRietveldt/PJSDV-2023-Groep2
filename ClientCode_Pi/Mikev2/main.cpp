@@ -31,6 +31,9 @@ int main() {
         case '2': 
             deur.belflits(client);
         break;
+        case '3': 
+            deur.sluiten(client);
+        break;
     // Include cases for other buttons
 }
 
