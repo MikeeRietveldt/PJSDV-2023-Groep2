@@ -1,0 +1,1 @@
+g++ main.cpp client.cpp Domotica/deur.cpp Domotica/muur.cpp -o test
