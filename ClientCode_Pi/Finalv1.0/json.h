@@ -4,8 +4,6 @@
 
 #pragma once
 
-// std::string userInput;
-// rapidjson::Document jsoninput;
 
 class Client;
 
@@ -16,12 +14,11 @@ class Json {
     void actJsonFromFile(const std::string& filename, Client client);
     void inputJson();
     void idJson(const std::string& filename);
-    // void processJsonInput(const std::string& filename, Client& client, Deur& deur, Muur& muur);
     void jsonLdrPot(const std::string& filename, Client &client);
     void saveReceivedDataToJson(const std::string& filename, const char* receivedData);
-    void jsonInputAct(const std::string& filename);
-    int test(const std::string& filename);
-    void test2(int identifier, const std::string& filename);
+    int selectId(const std::string& filename);
+    void idCheck(int identifier, const std::string& filename);
+    void input();
 
     int id;
 

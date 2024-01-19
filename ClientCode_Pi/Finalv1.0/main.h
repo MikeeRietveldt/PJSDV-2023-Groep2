@@ -13,3 +13,5 @@ char dicht = 2;
 int status, client_fd; //exc valread
 
 char buffer[1024] = { 0 };
+
+char Mbuffer [64];

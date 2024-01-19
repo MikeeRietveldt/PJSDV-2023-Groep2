@@ -12,7 +12,8 @@
 extern std::string userInput;
 extern rapidjson::Document jsoninput;
 
-
+Client client;
+Json json;
 
 void Muur::readLDR(Client &client){
     char buffer[64];
@@ -57,34 +58,7 @@ void Muur::sendRGB(int led, int rgb,Client &client) {
     memset(sendBuffer, 0, sizeof(sendBuffer));    
 }
 
-void Muur::vraagInput(Client &client){
-    Json json;
-    Muur muur;
-    char buffer[64];
-    std::cout << "Strip=0,1 RGB 0..4" << std::endl;
-    std::cout << "Enter choice followed by values note {'strip':1,'rgb':1}:" << std::endl;
 
-    // Read JSON input from user
-    std::getline(std::cin, userInput);
-
-    //rapidjson::Document jsoninput;
-    jsoninput.Parse(userInput.c_str());
-    // Validate JSON structure
-    if (!jsoninput.IsObject() || !jsoninput.HasMember("strip") || !jsoninput.HasMember("rgb")){
-        std::cerr << "Invalid input. Please enter valid JSON with 'strip' or 'rgb'" << std::endl;
-    }
-
-    // Save the JSON input to a file
-    json.saveJsonToFile(jsoninput, "input.json");
-
-    //lees waarden strip
-    int strip = jsoninput["strip"].GetInt();
-    int rgbwaarde = jsoninput["rgb"].GetInt();
-    // Clear buffer
-    memset(buffer, 0, sizeof(buffer));
-    //sendstriprgb(strip, rgbwaarde, client);
-    muur.sendRGB(strip,rgbwaarde,client);
-}
 
 int Muur::actLDR(int ldr, Client &client){
     std::cout << "ldr value: " << ldr << std::endl;
@@ -96,11 +70,6 @@ int Muur::actLDR(int ldr, Client &client){
         ldrValue = 0;
     }
     return ldrValue;
-    // char sendBuffer[64];
-    // snprintf(sendBuffer, sizeof(sendBuffer), "%d", ldrValue);
-    // client.sending(sendBuffer, strlen(sendBuffer)); //1 karakter versturen.
-    // std::cout << "LDR verstuurd " << ldrValue << std::endl;
-
 }
 
 int Muur::actPot(int pot, Client &client){
@@ -129,4 +98,15 @@ void Muur::sendLdrPot(int lValue, int pValue, Client &client){
     snprintf(sendBuffer, sizeof(sendBuffer), "%d,%d", lValue,pValue);
     client.sending(sendBuffer, strlen(sendBuffer)); //1 karakter versturen.
     std::cout << "LDR verstuurd: " << lValue << "Pot: " << pValue << std::endl;
+}
+
+
+void Muur::begin(){
+    client.connecting("192.168.137.248");   
+    client.receive(Mbuffer, sizeof(Mbuffer));
+    std::cout << "MBuffer is: " << Mbuffer << std::endl;
+    json.saveReceivedDataToJson("output.json", Mbuffer);
+    json.jsonLdrPot("output.json", client);
+    client.disconnect();
+    memset(Mbuffer, 0, sizeof(Mbuffer));
 }

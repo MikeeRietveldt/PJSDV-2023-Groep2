@@ -17,9 +17,9 @@
 #include "Domotica/deur.h"
 #include "client.h"
 
-Json json;
+// Json json;
 Muur muur;
-Client client;
+
 Deur deur;
 
 extern std::string userInput;
@@ -65,18 +65,19 @@ void Json::inputJson(){
         }
     }
     // Save the JSON input to a file
-    json.saveJsonToFile(jsoninput, "input.json");
+    saveJsonToFile(jsoninput, "input.json");
 
-    json.id = jsoninput["id"].GetInt();
-    json.idJson(userInput);
+    id = jsoninput["id"].GetInt();
+    idJson(userInput);
 }
 
 void Json::idJson(const std::string& filename){
-    if (json.id == 1) {
+    Client client;
+    if (id == 1) {
             client.connecting("192.168.137.248");
             muur.readLDR(client);
             muur.readPotent(client);
-            muur.vraagInput(client);
+            // muur.vraagInput(client);
             // std::cout << "Strip=0,1 RGB 0..4" << std::endl;
             // std::cout << "Enter choice followed by values note {'strip':1,'rgb':1}:" << std::endl;
 
@@ -104,7 +105,7 @@ void Json::idJson(const std::string& filename){
             client.disconnect();
         }
 
-    else if(json.id == 2){
+    else if(id == 2){
         Deur deur;
         client.connecting("192.168.137.251");
         char buffer[64];
@@ -126,7 +127,7 @@ void Json::idJson(const std::string& filename){
         }
 
         // Save the JSON input to a file
-        json.saveJsonToFile(jsoninput, "input.json");
+        saveJsonToFile(jsoninput, "input.json");
 
         //lees waarde deur
         std::string waarde_deur = jsoninput["deur"].GetString();
@@ -161,7 +162,7 @@ rapidjson::Document Json::readJsonFromFile(const std::string& filename) {
 
 
 void Json::actJsonFromFile(const std::string& filename, Client client){
-    rapidjson::Document fileJson = json.readJsonFromFile(filename);
+    rapidjson::Document fileJson = readJsonFromFile(filename);
 
     if (!fileJson.IsNull()) {
         // Validate JSON structure
@@ -192,7 +193,7 @@ void Json::actJsonFromFile(const std::string& filename, Client client){
     }
 }
 void Json::jsonLdrPot(const std::string& filename, Client &client){
-    rapidjson::Document fileJson = json.readJsonFromFile(filename);
+    rapidjson::Document fileJson = readJsonFromFile(filename);
 
         int fileLdr = 0, filePot = 0;
 
@@ -219,7 +220,6 @@ void Json::jsonLdrPot(const std::string& filename, Client &client){
         std::ofstream clearFile(filename, std::ios::trunc);
         clearFile.close();
 }
-// }
 
 
 void Json::saveReceivedDataToJson(const std::string& filename, const char* receivedData){
@@ -239,89 +239,30 @@ void Json::saveReceivedDataToJson(const std::string& filename, const char* recei
 }
 
 
-void Json::jsonInputAct(const std::string& filename){
-    rapidjson::Document fileJson = json.readJsonFromFile(filename);
 
-        // int id;
-        // std::cout << "komt hier jsonInputAct" << std::endl;
-        // std::cout << filename << std::endl;
-        // if (fileJson.HasMember("id") /*&& fileJson["id"].IsInt()*/) {
-        //     id = fileJson["id"].GetInt();
-        //     std::cout << "id van file is: " << id << std::endl;
-        // } else {
-        //     std::cout << "errror getting id from json file" << std::endl;
-        // }
-        // id = fileJson["id"].GetInt();
-        if(id == 1){
-            client.connecting("192.168.137.248");
-            std::cout << "Connecting id 1 from file" << std::endl;
-            actJsonFromFile("input.json", client);
-            client.disconnect();
-        }
-        else if(id == 2){
-            //lees waarde deur
-            client.connecting("192.168.137.249");
-            std::string waarde_deur = fileJson["deur"].GetString();
-            deur.set_deur(waarde_deur, deur, client);
-            // Clear the file content after processing
-            std::ofstream clearFile(filename, std::ios::trunc);
-            clearFile.close();
-        }
-         else {
-            std::cerr << "Invalid input. Please enter valid JSON with 'deur'" << std::endl;
-        }
-        
-        // Now you can use fileStrip and fileRgb in your code
-        std::cout << "Read ID from file: " << id << std::endl;
-        
 
-        // Clear the file content after processing
-        std::ofstream clearFile(filename, std::ios::trunc);
-        clearFile.close();
-}
-
-// int Json::test(const std::string& filename){
-//     rapidjson::Document fileJson = json.readJsonFromFile(filename);
-//     std::cout << "fileJson is: " << filename << std::endl;
-//     if(!fileJson.IsNull()){
-//         std::cerr << "invalid JSON structure in file" << std::endl;
-//         int error = 99;
-//         return error;
-//     }
-//     if(!fileJson.IsObject() || !fileJson.HasMember("id")){
-//         std::cerr << "invalid line from json file be sure id is visible" << std::endl;
-//     }
-//     // } else if(fileJson.HasMember("id")){
-//         int test = fileJson["id"].GetInt();
-//         return test;
-//     // }
-//     // int error2 = 90;
-//     // return error2;
-
-// }
-
-void Json::test2(int identifier, const std::string& filename) {
-    rapidjson::Document fileJson = json.readJsonFromFile(filename);
+void Json::idCheck(int identifier, const std::string& filename) {
+    rapidjson::Document fileJson = readJsonFromFile(filename);
+    Client client;
         if(identifier == 1){
         client.connecting("192.168.137.248");
         muur.readLDR(client);
         muur.readPotent(client);
-        // Sleep for 1 second
-        // std::this_thread::sleep_for(std::chrono::seconds(1));
         std::cout << "Connected id 1 from file" << std::endl;
-        json.actJsonFromFile("input.json", client);
+        actJsonFromFile("input.json", client);
         client.disconnect();
         }
         else if(identifier == 2){
-            // lees waarde deur
-            client.connecting("192.168.137.251");
-            std::string waarde_deur = fileJson["deur"].GetString();
-            deur.set_deur(waarde_deur, deur, client);
-            // Clear the file content after processing
-            std::ofstream clearFile(filename, std::ios::trunc);
-            clearFile.close();
-            client.disconnect();
-            std::cout << "gaat door id2" << std::endl;
+            // // lees waarde deur
+            // client.connecting("192.168.137.251");
+            // std::string waarde_deur = fileJson["deur"].GetString();
+            // deur.set_deur(waarde_deur, deur, client);
+            // // Clear the file content after processing
+            // std::ofstream clearFile(filename, std::ios::trunc);
+            // clearFile.close();
+            // client.disconnect();
+            // std::cout << "gaat door id2" << std::endl;
+            //%%%%%%%JOUW CODE
         }
          else {
             std::cerr << "Invalid input. Please enter valid JSON with 'deur'" << std::endl;
@@ -329,40 +270,11 @@ void Json::test2(int identifier, const std::string& filename) {
 
 }
 
-// int Json::test(const std::string& filename) {
-//     std::ifstream file(filename);
-//     if (!file.is_open()) {
-//         std::cerr << "Unable to open file: " << filename << std::endl;
-//         int error = 99;
-//         return error;
-//     }
-
-//     std::string jsonContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-//     file.close();
-
-//     if (jsonContent.empty()) {
-//         std::cerr << "File is empty: " << filename << std::endl;
-//         int error = 99;
-//         return error;
-//     }
-
-//     rapidjson::Document fileJson;
-//     fileJson.Parse(jsonContent.c_str());
-
-//     if (!fileJson.IsObject() || !fileJson.HasMember("id")) {
-//         std::cerr << "Invalid JSON structure in file" << std::endl;
-//         int error = 99;
-//         return error;
-//     }
-
-//     int test = fileJson["id"].GetInt();
-//     return test;
-// }
 
 
 
 
-int Json::test(const std::string& filename) {
+int Json::selectId(const std::string& filename) {
     std::ifstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Unable to open file: " << filename << std::endl;
@@ -391,3 +303,8 @@ int Json::test(const std::string& filename) {
 
 
 
+void Json::input(){
+    int idTest = selectId("input.json");
+    std::cout << "id teruggekregen is: " << idTest << std::endl;
+    idCheck(idTest,"input.json");
+}
