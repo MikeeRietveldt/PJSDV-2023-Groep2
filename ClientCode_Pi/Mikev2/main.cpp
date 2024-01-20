@@ -14,8 +14,8 @@
 using namespace std;
 
 int main() {
-    Deur deur("192.168.137.251"); // Object creation with IP address
-    Client client; // Client object creation
+    Deur deur("192.168.137.251"); // Object aanmaken met ip
+    Client client; // Client object aanmaken
 
     while (true) {
         // Connect to the Deur device
@@ -32,13 +32,13 @@ int main() {
             deur.belflits(client);
         break;
         case '3': 
-            deur.sluiten(client);
+            deur.sluiten(client); // Deze case is extra, wordt eigenijk niet echt gebruikt aangezien deuropenen na een clock_timer automatisch de deur sluit
         break;
-    // Include cases for other buttons
+    // hier eventueel andere cases
 }
 
-        // Sleep for a short duration to prevent high CPU usage
-        sleep(1); // Sleep for 1 second
+        // Mini sleep om hoge CPU usage te voorkomen
+        sleep(1); // Sleep voor een seconde
     }
 
     return 0;
