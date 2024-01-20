@@ -23,7 +23,7 @@ int main() {
         client.receive();
         deur.update(client);
         char doorState = client.getLastReceivedState();
-
+    // hier nog functie voor maken.
     switch (doorState) {
         case '1': 
             deur.openen(client);
