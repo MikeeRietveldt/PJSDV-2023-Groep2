@@ -15,8 +15,8 @@ Client(); // construeert een object van de class
 ~Client(); // destructureert een object van de class
 
 private:
-int sock; // de verbinding die er gemaakt wordt.
-char lastReceivedState; // To store the last received state
+int sock; //De verbinding die er gemaakt wordt.
+char lastReceivedState; //Dit is om de laatste ontvangen waarde van de wemos in op te slaan
 
 
 };
